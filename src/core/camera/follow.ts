@@ -15,7 +15,7 @@ export class OrbitCameraFollow {
 
   sync(
     target: Object3D,
-    camera: PerspectiveCamera,
+    _camera: PerspectiveCamera,
     controls: OrbitControls,
     focusHeight = CAMERA_FOCUS_HEIGHT,
   ): void {

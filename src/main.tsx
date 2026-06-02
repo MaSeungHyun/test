@@ -1,14 +1,17 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import App from './App.tsx'
-import './index.css'
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App.tsx";
+import "./index.css";
+import { isElectron } from "@/core/platform";
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <App />
   </React.StrictMode>,
-)
+);
 
-window.ipcRenderer?.on("main-process-message", (_event, message) => {
-  console.log(message);
-});
+if (isElectron() && window.ipcRenderer) {
+  window.ipcRenderer.on("main-process-message", (_event, message) => {
+    console.log(message);
+  });
+}
