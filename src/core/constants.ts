@@ -15,3 +15,8 @@ export const SAVE_KEY = "menhera-save";
 export const SAVE_INTERVAL_SEC = 15;
 
 export const MONOLOGUE_DISPLAY_MS = 9000;
+
+/** 공허 엔딩 — 옥상 난간 */
+export const ROOF_EDGE_X = -24;
+export const ROOF_EDGE_Z = 28;
+export const ROOF_PLATFORM_Y = 11.5;

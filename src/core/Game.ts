@@ -1,5 +1,8 @@
 import * as THREE from "three";
 import playerModel from "@/assets/player.glb";
+import phoneModel from "@/assets/phone.glb";
+import cigaretteModel from "@/assets/cigarette.glb";
+import { loadPropGlb } from "@/core/entities/loadPropGlb";
 import {
   CAMERA_FOCUS_HEIGHT,
   CAMERA_FOV,
@@ -33,6 +36,8 @@ import { resizeViewport } from "@/core/viewport/resize";
 import type { GameUiBridge } from "@/core/ui/bridge";
 import { DialogueSystem } from "@/core/systems/DialogueSystem";
 import { EndingSystem } from "@/core/systems/EndingSystem";
+import { EndingCinematic } from "@/core/systems/EndingCinematic";
+import type { EndingDef } from "@/data/endings";
 import { InteractionSystem } from "@/core/systems/InteractionSystem";
 import { MonologueSystem } from "@/core/systems/MonologueSystem";
 import { QuestSystem } from "@/core/systems/QuestSystem";
@@ -72,6 +77,9 @@ export class Game {
   private dialogue = new DialogueSystem();
   private interaction = new InteractionSystem();
   private ending = new EndingSystem();
+  private endingCinematic = new EndingCinematic();
+  private pendingEnding: EndingDef | null = null;
+  private endingUiShown = false;
   private save = new SaveSystem();
   private saveTimer = 0;
   private sceneReady = false;
@@ -163,10 +171,15 @@ export class Game {
       }),
     ];
 
+    const [phoneMesh, cigaretteMesh] = await Promise.all([
+      loadPropGlb(phoneModel, 0.22),
+      loadPropGlb(cigaretteModel, 0.16),
+    ]);
+
     this.interactables = [
       new Interactable("bench", -14, 10, this.scene),
-      new Interactable("phone", 22, -16, this.scene),
-      new Interactable("cigarette", -26, -12, this.scene),
+      new Interactable("phone", 22, -16, this.scene, phoneMesh),
+      new Interactable("cigarette", -26, -12, this.scene, cigaretteMesh),
       new Interactable("vending", 18, 4, this.scene),
       new Interactable("mirror", -8, -22, this.scene),
       new Interactable("letter", 14, 20, this.scene),
@@ -305,14 +318,29 @@ export class Game {
     }
 
     const delta = this.clock.getDelta();
+    const cinematicActive = this.endingCinematic.active;
     const blocked =
-      this.dialogue.active || this.ending.triggered || this.interaction.resting;
+      this.dialogue.active ||
+      this.ending.triggered ||
+      this.interaction.resting ||
+      cinematicActive;
 
     this.interaction.updateRest(delta);
     this.character.movementEnabled =
       !this.dialogue.active &&
       !this.ending.triggered &&
-      !this.interaction.resting;
+      !this.interaction.resting &&
+      !cinematicActive;
+
+    if (cinematicActive) {
+      const stillFalling = this.endingCinematic.update(delta);
+      if (!stillFalling && this.pendingEnding && !this.endingUiShown) {
+        this.ui.onEnding(this.pendingEnding);
+        this.endingUiShown = true;
+      }
+      this.renderer.render(this.scene, this.camera);
+      return;
+    }
 
     const isMoving = this.keyboard.isMoving && this.character.movementEnabled;
     const isRunning = this.keyboard.isRunning && isMoving;
@@ -391,9 +419,22 @@ export class Game {
       this.memories.count,
       this.memories.total,
     );
-    if (ending) {
-      this.ui.onEnding(ending);
+    if (ending && !this.pendingEnding) {
+      this.pendingEnding = ending;
       this.character.movementEnabled = false;
+      if (ending.cinematic === "fall") {
+        this.ui.onInteractPrompt(false);
+        this.ui.onMonologue(null);
+        this.ui.onGlitch(true);
+        this.endingCinematic.start(
+          this.character,
+          this.camera,
+          this.controls,
+        );
+      } else {
+        this.ui.onEnding(ending);
+        this.endingUiShown = true;
+      }
     }
 
     this.rain?.update(delta);
@@ -462,6 +503,7 @@ export class Game {
     for (const obj of this.interactables) obj.dispose(this.scene);
     window.removeEventListener("resize", this.onWindowResize);
     this.resizeObserver?.disconnect();
+    this.endingCinematic.dispose();
     this.controls.dispose();
     this.renderer.dispose();
     this.renderer.domElement.remove();

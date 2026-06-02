@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { FLOOR_SIZE } from "@/core/constants";
+import { FLOOR_SIZE, ROOF_EDGE_X, ROOF_EDGE_Z, ROOF_PLATFORM_Y } from "@/core/constants";
 import { QUEST_CHAIN } from "@/data/quests";
 
 export type ScatterPropsHandle = {
@@ -98,6 +98,17 @@ export function createScatterProps(scene: THREE.Scene): ScatterPropsHandle {
     [-5, -32],
   ];
   for (const [x, z] of lampPositions) addLamp(root, x, z);
+
+  const roofH = ROOF_PLATFORM_Y;
+  const roofTower = box(9, roofH, 8, matBuilding);
+  roofTower.position.set(ROOF_EDGE_X - 1.5, roofH / 2, ROOF_EDGE_Z - 1.2);
+  root.add(roofTower);
+  const roofRail = box(0.08, 0.9, 3.2, matPole);
+  roofRail.position.set(ROOF_EDGE_X + 0.8, roofH + 0.45, ROOF_EDGE_Z + 0.6);
+  root.add(roofRail);
+  const roofRail2 = roofRail.clone();
+  roofRail2.position.set(ROOF_EDGE_X - 2.2, roofH + 0.45, ROOF_EDGE_Z + 0.6);
+  root.add(roofRail2);
 
   const bench = box(2, 0.45, 0.8, matBench);
   bench.position.set(-14, 0.22, 10);

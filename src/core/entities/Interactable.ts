@@ -14,8 +14,7 @@ type InteractableConfig = {
   label: string;
   dialogueId: string;
   restSeconds: number;
-  color: number;
-  emissive?: number;
+  markerY: number;
   buildMesh: () => THREE.Object3D;
 };
 
@@ -24,7 +23,7 @@ const CONFIGS: Record<InteractableType, InteractableConfig> = {
     label: "벤치에 앉기 [E]",
     dialogueId: "bench",
     restSeconds: 5,
-    color: 0x2a2238,
+    markerY: 1.4,
     buildMesh: () => {
       const g = new THREE.Group();
       const mat = new THREE.MeshStandardMaterial({ color: 0x2a2238 });
@@ -38,37 +37,21 @@ const CONFIGS: Record<InteractableType, InteractableConfig> = {
     label: "휴대폰 보기 [E]",
     dialogueId: "phone",
     restSeconds: 0,
-    color: 0x4a6a8a,
-    emissive: 0x224466,
-    buildMesh: () => {
-      const mat = new THREE.MeshStandardMaterial({
-        color: 0x4a6a8a,
-        emissive: 0x224466,
-        emissiveIntensity: 0.5,
-      });
-      const booth = new THREE.Mesh(new THREE.BoxGeometry(0.45, 1.7, 0.28), mat);
-      booth.position.y = 0.85;
-      return booth;
-    },
+    markerY: 0.55,
+    buildMesh: () => new THREE.Group(),
   },
   cigarette: {
     label: "담배 [E]",
     dialogueId: "cigarette",
     restSeconds: 0,
-    color: 0x3a3048,
-    buildMesh: () => {
-      const mat = new THREE.MeshStandardMaterial({ color: 0x3a3048 });
-      const pack = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.28, 0.08), mat);
-      pack.position.y = 0.9;
-      return pack;
-    },
+    markerY: 0.5,
+    buildMesh: () => new THREE.Group(),
   },
   vending: {
     label: "자판기 [E]",
     dialogueId: "vending",
     restSeconds: 0,
-    color: 0x3d4a5a,
-    emissive: 0x1a3040,
+    markerY: 1.6,
     buildMesh: () => {
       const mat = new THREE.MeshStandardMaterial({
         color: 0x3d4a5a,
@@ -84,8 +67,7 @@ const CONFIGS: Record<InteractableType, InteractableConfig> = {
     label: "거울 [E]",
     dialogueId: "mirror",
     restSeconds: 0,
-    color: 0x6a7a8a,
-    emissive: 0x334455,
+    markerY: 1.5,
     buildMesh: () => {
       const mat = new THREE.MeshStandardMaterial({
         color: 0x8899aa,
@@ -103,7 +85,7 @@ const CONFIGS: Record<InteractableType, InteractableConfig> = {
     label: "편지 [E]",
     dialogueId: "letter",
     restSeconds: 0,
-    color: 0x4a4058,
+    markerY: 0.7,
     buildMesh: () => {
       const mat = new THREE.MeshStandardMaterial({ color: 0x5a5068 });
       const env = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.05, 0.5), mat);
@@ -115,7 +97,7 @@ const CONFIGS: Record<InteractableType, InteractableConfig> = {
     label: "분수대 [E]",
     dialogueId: "fountain",
     restSeconds: 3,
-    color: 0x2a3548,
+    markerY: 1.5,
     buildMesh: () => {
       const g = new THREE.Group();
       const mat = new THREE.MeshStandardMaterial({ color: 0x2a3548 });
@@ -137,8 +119,7 @@ const CONFIGS: Record<InteractableType, InteractableConfig> = {
     label: "제단 [E]",
     dialogueId: "shrine",
     restSeconds: 4,
-    color: 0x3a2838,
-    emissive: 0x2a1525,
+    markerY: 1.4,
     buildMesh: () => {
       const g = new THREE.Group();
       const mat = new THREE.MeshStandardMaterial({
@@ -167,6 +148,7 @@ export class Interactable {
     x: number,
     z: number,
     scene: THREE.Scene,
+    propMesh?: THREE.Object3D,
   ) {
     const cfg = CONFIGS[type];
     this.label = cfg.label;
@@ -174,7 +156,7 @@ export class Interactable {
     this.restSeconds = cfg.restSeconds;
     this.root.position.set(x, 0, z);
 
-    const mesh = cfg.buildMesh();
+    const mesh = propMesh ?? cfg.buildMesh();
     mesh.traverse((c) => {
       if (c instanceof THREE.Mesh) {
         c.castShadow = true;
@@ -191,7 +173,7 @@ export class Interactable {
         opacity: 0.45,
       }),
     );
-    marker.position.y = 1.4;
+    marker.position.y = cfg.markerY;
     this.root.add(marker);
     scene.add(this.root);
   }
@@ -201,7 +183,9 @@ export class Interactable {
     this.root.traverse((c) => {
       if (c instanceof THREE.Mesh) {
         c.geometry.dispose();
-        (c.material as THREE.Material).dispose();
+        const mat = c.material;
+        if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
+        else mat.dispose();
       }
     });
   }

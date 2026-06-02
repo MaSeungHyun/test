@@ -143,4 +143,9 @@ export class Character {
     for (const action of this.actions.values()) action.stop();
     this.activeAction = null;
   }
+
+  stopAnimationsForCinematic(): void {
+    this.stopAllAnimations();
+    if (this.mixer) this.mixer.update(0);
+  }
 }

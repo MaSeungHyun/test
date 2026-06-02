@@ -1,9 +1,9 @@
-import { ENDINGS } from "@/data/endings";
+import { ENDINGS, type EndingDef } from "@/data/endings";
 import { STRESS_MAX } from "@/core/constants";
 
 export class EndingSystem {
   triggered = false;
-  current: (typeof ENDINGS)[keyof typeof ENDINGS] | null = null;
+  current: EndingDef | null = null;
 
   check(
     allQuestsDone: boolean,
