@@ -10,13 +10,40 @@ export type InteractableType =
   | "fountain"
   | "shrine";
 
+type PropSpotlight = {
+  color: number;
+  intensity: number;
+  distance: number;
+  glowColor: number;
+  glowOpacity: number;
+};
+
 type InteractableConfig = {
   label: string;
   dialogueId: string;
   restSeconds: number;
   markerY: number;
+  spotlight?: PropSpotlight;
   buildMesh: () => THREE.Object3D;
 };
+
+function addPropSpotlight(parent: THREE.Group, cfg: PropSpotlight): void {
+  const light = new THREE.PointLight(cfg.color, cfg.intensity, cfg.distance, 2);
+  light.position.set(0, 0.12, 0);
+  parent.add(light);
+
+  const glow = new THREE.Mesh(
+    new THREE.SphereGeometry(0.35, 10, 10),
+    new THREE.MeshBasicMaterial({
+      color: cfg.glowColor,
+      transparent: true,
+      opacity: cfg.glowOpacity,
+      toneMapped: false,
+    }),
+  );
+  glow.position.y = 0.06;
+  parent.add(glow);
+}
 
 const CONFIGS: Record<InteractableType, InteractableConfig> = {
   bench: {
@@ -38,6 +65,13 @@ const CONFIGS: Record<InteractableType, InteractableConfig> = {
     dialogueId: "phone",
     restSeconds: 0,
     markerY: 0.55,
+    spotlight: {
+      color: 0x9ec8ff,
+      intensity: 2.2,
+      distance: 7,
+      glowColor: 0x6a9eff,
+      glowOpacity: 0.35,
+    },
     buildMesh: () => new THREE.Group(),
   },
   cigarette: {
@@ -45,6 +79,13 @@ const CONFIGS: Record<InteractableType, InteractableConfig> = {
     dialogueId: "cigarette",
     restSeconds: 0,
     markerY: 0.5,
+    spotlight: {
+      color: 0xffb060,
+      intensity: 1.8,
+      distance: 6,
+      glowColor: 0xff9040,
+      glowOpacity: 0.32,
+    },
     buildMesh: () => new THREE.Group(),
   },
   vending: {
@@ -164,6 +205,10 @@ export class Interactable {
       }
     });
     this.root.add(mesh);
+
+    if (cfg.spotlight) {
+      addPropSpotlight(this.root, cfg.spotlight);
+    }
 
     const marker = new THREE.Mesh(
       new THREE.SphereGeometry(0.12, 8, 8),

@@ -26,8 +26,14 @@ import {
   type LightingHandle,
 } from "@/core/environment/Lighting";
 import { createRain, type RainHandle } from "@/core/environment/Rain";
-import { createMemoryMarkers, type MemoryMarkersHandle } from "@/core/environment/memoryMarkers";
-import { createScatterProps, type ScatterPropsHandle } from "@/core/environment/scatterProps";
+import {
+  createMemoryMarkers,
+  type MemoryMarkersHandle,
+} from "@/core/environment/memoryMarkers";
+import {
+  createScatterProps,
+  type ScatterPropsHandle,
+} from "@/core/environment/scatterProps";
 import { MemorySystem } from "@/core/systems/MemorySystem";
 import { Bgm } from "@/core/audio/Bgm";
 import { Sfx } from "@/core/audio/Sfx";
@@ -172,8 +178,8 @@ export class Game {
     ];
 
     const [phoneMesh, cigaretteMesh] = await Promise.all([
-      loadPropGlb(phoneModel, 0.22),
-      loadPropGlb(cigaretteModel, 0.16),
+      loadPropGlb(phoneModel, 1),
+      loadPropGlb(cigaretteModel, 1),
     ]);
 
     this.interactables = [
@@ -361,12 +367,7 @@ export class Game {
       const q = this.quest.current;
       this.props?.setQuestTarget(q.targetX, q.targetZ);
     }
-    this.stress.update(
-      delta,
-      isMoving,
-      isRunning,
-      this.interaction.resting,
-    );
+    this.stress.update(delta, isMoving, isRunning, this.interaction.resting);
 
     this.monologue.update(
       delta,
@@ -405,8 +406,7 @@ export class Game {
         ? this.interaction.findNearby(pos, this.npcs, this.interactables)
         : null;
     if (!blocked && nearby) {
-      const label =
-        nearby.kind === "npc" ? nearby.label : nearby.object.label;
+      const label = nearby.kind === "npc" ? nearby.label : nearby.object.label;
       this.ui.onInteractPrompt(true, label);
     } else {
       this.ui.onInteractPrompt(false);
@@ -426,11 +426,7 @@ export class Game {
         this.ui.onInteractPrompt(false);
         this.ui.onMonologue(null);
         this.ui.onGlitch(true);
-        this.endingCinematic.start(
-          this.character,
-          this.camera,
-          this.controls,
-        );
+        this.endingCinematic.start(this.character, this.camera, this.controls);
       } else {
         this.ui.onEnding(ending);
         this.endingUiShown = true;
